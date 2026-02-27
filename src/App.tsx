@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -76,7 +76,7 @@ const TABS: [TabKey, string][] = [
 
 // ── Helpers ───────────────────────────────────────────────────
 
-function parseCell(raw: any): Cell {
+function parseCell(raw: number | number[]): Cell {
   if (Array.isArray(raw)) {
     const [val, rev, fl] = raw;
     if (fl === 1) return { t: "F", v: val };
@@ -318,6 +318,16 @@ export default function App() {
   const [inputVal, setInputVal] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [isWide, setIsWide] = useState(
+    () => window.matchMedia("(min-width: 1250px)").matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1250px)");
+    const handler = (e: MediaQueryListEvent) => setIsWide(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const { board, R, C, M } = useMemo((): BoardData => {
     try {
@@ -391,186 +401,241 @@ export default function App() {
         background: "#111827",
         color: "#e5e7eb",
         minHeight: "100vh",
+        width: "100%",
+        boxSizing: "border-box",
         flexDirection: "column",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
+        paddingTop: 40,
       }}
     >
-      <h2 style={{ color: "#f87171", margin: "0 0 8px" }}>
-        🔍 Minesweeper Analysis
-      </h2>
-
-      {/* Stats bar */}
-      <div
-        style={{
-          fontSize: 13,
-          marginBottom: 6,
-          display: "flex",
-          gap: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        <span>
-          Mines remaining:{" "}
-          <strong style={{ color: "#fbbf24" }}>{minesLeft}</strong>
-        </span>
-        <span>
-          Hidden cells: <strong>{frontier.size + interior.size}</strong>
-        </span>
-        <span>
-          Frontier: <strong>{frontier.size}</strong>
-        </span>
-        <span>
-          Interior: <strong>{interior.size}</strong>
-        </span>
-        <span>
-          Interior mine prob:{" "}
-          <strong
-            style={{ color: interiorProb < 0.3 ? "#4ade80" : "#f87171" }}
-          >
-            {(interiorProb * 100).toFixed(1)}%
-          </strong>
-        </span>
-      </div>
-
-      {/* Controls */}
+      {/* Two-column layout on wide screens */}
       <div
         style={{
           display: "flex",
-          gap: 12,
-          marginBottom: 10,
-          fontSize: 13,
-          alignItems: "center",
+          flexDirection: isWide ? "row" : "column",
+          alignItems: isWide ? "flex-start" : "center",
+          gap: 20,
+          maxWidth: isWide ? 1250 : 600,
+          width: "100%",
         }}
       >
-        <label style={{ cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={showProbs}
-            onChange={(e) => setShowProbs(e.target.checked)}
-          />{" "}
-          Probability heatmap
-        </label>
-        <label style={{ cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={showMines}
-            onChange={(e) => setShowMines(e.target.checked)}
-          />{" "}
-          Show mines (cheat)
-        </label>
-        <button
-          onClick={() => {
-            setShowImport(!showImport);
-            setImportError(null);
-          }}
-          style={{
-            padding: "4px 12px",
-            borderRadius: 4,
-            border: "none",
-            cursor: "pointer",
-            fontSize: 12,
-            background: "#374151",
-            color: "#e5e7eb",
-            fontWeight: "bold",
-          }}
-        >
-          {showImport ? "Hide Import" : "📋 Import Game State"}
-        </button>
-      </div>
-
-      {/* Import panel */}
-      {showImport && (
+        {/* Left column: header + board + legend + selection */}
         <div
           style={{
-            background: "#1f2937",
-            padding: 12,
-            borderRadius: 8,
-            marginBottom: 10,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: isWide ? "flex-start" : "center",
+            flex: isWide ? "0 0 auto" : undefined,
+            maxWidth: 600,
+            width: "100%",
           }}
         >
-          <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 6 }}>
-            Paste a base64 game state export below:
+          <h2 style={{ color: "#f87171", margin: "0 0 8px" }}>
+            🔍 Minesweeper Analysis
+          </h2>
+
+          {/* Stats bar */}
+          <div
+            style={{
+              maxWidth: 600,
+              width: "100%",
+              fontSize: 13,
+              marginBottom: 6,
+              display: "flex",
+              gap: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <span>
+              Mines remaining:{" "}
+              <strong style={{ color: "#fbbf24" }}>{minesLeft}</strong>
+            </span>
+            <span>
+              Hidden cells:{" "}
+              <strong>{frontier.size + interior.size}</strong>
+            </span>
+            <span>
+              Frontier: <strong>{frontier.size}</strong>
+            </span>
+            <span>
+              Interior: <strong>{interior.size}</strong>
+            </span>
+            <span>
+              Interior mine prob:{" "}
+              <strong
+                style={{
+                  color: interiorProb < 0.3 ? "#4ade80" : "#f87171",
+                }}
+              >
+                {(interiorProb * 100).toFixed(1)}%
+              </strong>
+            </span>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <textarea
-              value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
-              placeholder="Paste base64 game state here..."
-              style={{
-                flex: 1,
-                height: 60,
-                background: "#111827",
-                color: "#e5e7eb",
-                border: "1px solid #555",
-                borderRadius: 4,
-                padding: 8,
-                fontFamily: "monospace",
-                fontSize: 11,
-                resize: "vertical",
-              }}
-            />
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+
+          {/* Controls */}
+          <div
+            style={{
+              maxWidth: 600,
+              width: "100%",
+              display: "flex",
+              gap: 12,
+              marginBottom: 10,
+              fontSize: 13,
+              alignItems: "center",
+            }}
+          >
+            <label style={{ cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={showProbs}
+                onChange={(e) => setShowProbs(e.target.checked)}
+              />{" "}
+              Probability heatmap
+            </label>
+            <label style={{ cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={showMines}
+                onChange={(e) => setShowMines(e.target.checked)}
+              />{" "}
+              Show mines (cheat)
+            </label>
             <button
               onClick={() => {
-                try {
-                  const trimmed = inputVal.trim();
-                  JSON.parse(atob(trimmed));
-                  setCustomB64(trimmed);
-                  setSel(null);
-                  setImportError(null);
-                  setShowImport(false);
-                } catch {
-                  setImportError(
-                    "Invalid game state — make sure you paste the full base64 string.",
-                  );
-                }
-              }}
-              style={{
-                padding: "6px 16px",
-                borderRadius: 4,
-                border: "none",
-                cursor: "pointer",
-                fontSize: 12,
-                background: "#4ade80",
-                color: "#000",
-                fontWeight: "bold",
-              }}
-            >
-              Load
-            </button>
-            <button
-              onClick={() => {
-                setCustomB64(B64);
-                setSel(null);
-                setInputVal("");
+                setShowImport(!showImport);
                 setImportError(null);
               }}
               style={{
-                padding: "6px 16px",
+                padding: "4px 12px",
                 borderRadius: 4,
                 border: "none",
                 cursor: "pointer",
                 fontSize: 12,
+                lineHeight: "20px",
                 background: "#374151",
                 color: "#e5e7eb",
+                fontWeight: "bold",
               }}
             >
-              Reset to Default
+              {showImport ? "Hide Import" : "📋 Import Game State"}
             </button>
           </div>
-          {importError && (
-            <div style={{ color: "#f87171", fontSize: 12, marginTop: 6 }}>
-              {importError}
+
+          {/* Import panel */}
+          {showImport && (
+            <div
+              style={{
+                maxWidth: 600,
+                width: "100%",
+                background: "#1f2937",
+                padding: 12,
+                borderRadius: 8,
+                marginBottom: 10,
+                boxSizing: "border-box",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "#9ca3af",
+                  marginBottom: 6,
+                }}
+              >
+                Paste a base64 game state export below:
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <textarea
+                  value={inputVal}
+                  onChange={(e) => setInputVal(e.target.value)}
+                  placeholder="Paste base64 game state here..."
+                  style={{
+                    flex: 1,
+                    height: 60,
+                    background: "#111827",
+                    color: "#e5e7eb",
+                    border: "1px solid #555",
+                    borderRadius: 4,
+                    padding: 8,
+                    fontFamily: "monospace",
+                    fontSize: 11,
+                    resize: "vertical",
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <button
+                  onClick={() => {
+                    try {
+                      const trimmed = inputVal.trim();
+                      JSON.parse(atob(trimmed));
+                      setCustomB64(trimmed);
+                      setSel(null);
+                      setImportError(null);
+                      setShowImport(false);
+                    } catch {
+                      setImportError(
+                        "Invalid game state — make sure you paste the full base64 string.",
+                      );
+                    }
+                  }}
+                  style={{
+                    padding: "6px 16px",
+                    borderRadius: 4,
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    background: "#4ade80",
+                    color: "#000",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Load
+                </button>
+                <button
+                  onClick={() => {
+                    setCustomB64(B64);
+                    setSel(null);
+                    setInputVal("");
+                    setImportError(null);
+                  }}
+                  style={{
+                    padding: "6px 16px",
+                    borderRadius: 4,
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    background: "#374151",
+                    color: "#e5e7eb",
+                  }}
+                >
+                  Reset to Default
+                </button>
+              </div>
+              {importError && (
+                <div
+                  style={{
+                    color: "#f87171",
+                    fontSize: 12,
+                    marginTop: 6,
+                  }}
+                >
+                  {importError}
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Board grid */}
-      <div style={{ overflowX: "auto", marginBottom: 14 }}>
+          {/* Board grid */}
+          <div
+            style={{
+              maxWidth: 600,
+              width: "100%",
+              overflowX: "auto",
+              marginBottom: 14,
+            }}
+          >
         <div
           style={{
             display: "inline-block",
@@ -662,37 +727,141 @@ export default function App() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-        {TABS.map(([k, label]) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
+          {/* Legend */}
+          <div
             style={{
-              padding: "6px 14px",
-              borderRadius: 6,
-              border: "none",
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: "bold",
-              background: tab === k ? "#374151" : "#1f2937",
-              color: "#e5e7eb",
+              maxWidth: 600,
+              width: "100%",
+              background: "#1f2937",
+              padding: 10,
+              borderRadius: 8,
+              fontSize: 11,
+              color: "#9ca3af",
+              boxSizing: "border-box",
+              marginBottom: 12,
             }}
           >
-            {label}
-          </button>
-        ))}
-      </div>
+            <strong>Legend:</strong> Green ✓ = deduced safe | Red ✗ =
+            deduced mine | Yellow border = best guess | Numbers on
+            hidden cells = mine % | Heatmap: green=safe, red=dangerous
+          </div>
 
-      {/* Tab content */}
-      <div
-        style={{
-          background: "#1f2937",
-          padding: 14,
-          borderRadius: 8,
-          marginBottom: 12,
-        }}
-      >
+          {/* Selection detail */}
+          {sel && (
+            <div
+              style={{
+                maxWidth: 600,
+                width: "100%",
+                background: "#374151",
+                padding: 12,
+                borderRadius: 8,
+                fontSize: 13,
+                marginBottom: 12,
+                boxSizing: "border-box",
+              }}
+            >
+              <strong>
+                R{sel.r} C{sel.c}
+              </strong>
+              {sel.type === "ded" && (
+                <>
+                  {" → "}
+                  <span
+                    style={{
+                      color:
+                        sel.data.action === "safe"
+                          ? "#4ade80"
+                          : "#f87171",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {sel.data.action.toUpperCase()}
+                  </span>
+                  <div style={{ marginTop: 4 }}>
+                    {sel.data.reasons.map((reason, i) => (
+                      <div key={i}>• {reason}</div>
+                    ))}
+                  </div>
+                </>
+              )}
+              {sel.type === "prob" && sel.data && (
+                <>
+                  {" → "}
+                  <span style={{ color: "#fbbf24" }}>
+                    {(sel.data.prob * 100).toFixed(1)}% mine chance
+                  </span>
+                  {" ("}
+                  {sel.data.isFrontier ? "frontier" : "interior"}
+                  {")"}
+                </>
+              )}
+              {showMines && (
+                <div
+                  style={{
+                    marginTop: 4,
+                    color: board[sel.r][sel.c].mine
+                      ? "#f87171"
+                      : "#4ade80",
+                  }}
+                >
+                  Actual:{" "}
+                  {board[sel.r][sel.c].mine ? "💣 MINE" : "✅ Safe"}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right column: tabs + tab content */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flex: isWide ? 1 : undefined,
+            maxWidth: 600,
+            width: "100%",
+          }}
+        >
+          {/* Tabs */}
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              gap: 6,
+              marginBottom: 10,
+            }}
+          >
+            {TABS.map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setTab(k)}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: 6,
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: "bold",
+                  background: tab === k ? "#374151" : "#1f2937",
+                  color: "#e5e7eb",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
+          <div
+            style={{
+              width: "100%",
+              background: "#1f2937",
+              padding: 14,
+              borderRadius: 8,
+              marginBottom: 12,
+              boxSizing: "border-box",
+            }}
+          >
         {tab === "prob" &&
           (() => {
             const bestOverall = best5[0];
@@ -933,81 +1102,8 @@ export default function App() {
             </div>
           </>
         )}
-      </div>
-
-      {/* Selection detail */}
-      {sel && (
-        <div
-          style={{
-            background: "#374151",
-            padding: 12,
-            borderRadius: 8,
-            fontSize: 13,
-            marginBottom: 12,
-          }}
-        >
-          <strong>
-            R{sel.r} C{sel.c}
-          </strong>
-          {sel.type === "ded" && (
-            <>
-              {" → "}
-              <span
-                style={{
-                  color:
-                    sel.data.action === "safe" ? "#4ade80" : "#f87171",
-                  fontWeight: "bold",
-                }}
-              >
-                {sel.data.action.toUpperCase()}
-              </span>
-              <div style={{ marginTop: 4 }}>
-                {sel.data.reasons.map((reason, i) => (
-                  <div key={i}>• {reason}</div>
-                ))}
-              </div>
-            </>
-          )}
-          {sel.type === "prob" && sel.data && (
-            <>
-              {" → "}
-              <span style={{ color: "#fbbf24" }}>
-                {(sel.data.prob * 100).toFixed(1)}% mine chance
-              </span>
-              {" ("}
-              {sel.data.isFrontier ? "frontier" : "interior"}
-              {")"}
-            </>
-          )}
-          {showMines && (
-            <div
-              style={{
-                marginTop: 4,
-                color: board[sel.r][sel.c].mine
-                  ? "#f87171"
-                  : "#4ade80",
-              }}
-            >
-              Actual:{" "}
-              {board[sel.r][sel.c].mine ? "💣 MINE" : "✅ Safe"}
-            </div>
-          )}
+          </div>
         </div>
-      )}
-
-      {/* Legend */}
-      <div
-        style={{
-          background: "#1f2937",
-          padding: 10,
-          borderRadius: 8,
-          fontSize: 11,
-          color: "#9ca3af",
-        }}
-      >
-        <strong>Legend:</strong> Green ✓ = deduced safe | Red ✗ =
-        deduced mine | Yellow border = best guess | Numbers on hidden
-        cells = mine % | Heatmap: green=safe, red=dangerous
       </div>
     </div>
   );
