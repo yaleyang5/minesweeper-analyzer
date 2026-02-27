@@ -483,24 +483,24 @@ export default function App() {
               gap: 12,
               marginBottom: 10,
               fontSize: 13,
-              alignItems: "flex-start",
+              alignItems: "center",
               justifyContent: "flex-start",
             }}
           >
-            <label style={{ cursor: "pointer" }}>
+            <label style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}>
               <input
                 type="checkbox"
                 checked={showProbs}
                 onChange={(e) => setShowProbs(e.target.checked)}
-              />{" "}
+              />
               Probability heatmap
             </label>
-            <label style={{ cursor: "pointer" }}>
+            <label style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}>
               <input
                 type="checkbox"
                 checked={showMines}
                 onChange={(e) => setShowMines(e.target.checked)}
-              />{" "}
+              />
               Show mines (cheat)
             </label>
             <button
@@ -731,14 +731,13 @@ export default function App() {
                       fontWeight: "bold",
                       color,
                       background: cellBg(r, c),
-                      border:
-                        isBest && !d
+                      border: isSel
+                        ? "2px solid cyan"
+                        : isBest && !d
                           ? "2px solid #ffff00"
-                          : isSel
-                            ? "2px solid cyan"
-                            : cell.t === "H"
-                              ? "1px outset #bbb"
-                              : "1px solid #aaa",
+                          : cell.t === "H"
+                            ? "1px outset #bbb"
+                            : "1px solid #aaa",
                       boxSizing: "border-box",
                       cursor:
                         d || cell.t === "H" ? "pointer" : "default",
@@ -784,56 +783,76 @@ export default function App() {
                 fontSize: 13,
                 marginBottom: 12,
                 boxSizing: "border-box",
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
               }}
             >
-              <strong>
-                R{sel.r} C{sel.c}
-              </strong>
-              {sel.type === "ded" && (
-                <>
-                  {" → "}
-                  <span
+              <div>
+                <strong>
+                  R{sel.r} C{sel.c}
+                </strong>
+                {sel.type === "ded" && (
+                  <>
+                    {" → "}
+                    <span
+                      style={{
+                        color:
+                          sel.data.action === "safe"
+                            ? "#4ade80"
+                            : "#f87171",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {sel.data.action.toUpperCase()}
+                    </span>
+                    <div style={{ marginTop: 4 }}>
+                      {sel.data.reasons.map((reason, i) => (
+                        <div key={i}>• {reason}</div>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {sel.type === "prob" && sel.data && (
+                  <>
+                    {" → "}
+                    <span style={{ color: "#fbbf24" }}>
+                      {(sel.data.prob * 100).toFixed(1)}% mine chance
+                    </span>
+                    {" ("}
+                    {sel.data.isFrontier ? "frontier" : "interior"}
+                    {")"}
+                  </>
+                )}
+                {showMines && (
+                  <div
                     style={{
-                      color:
-                        sel.data.action === "safe"
-                          ? "#4ade80"
-                          : "#f87171",
-                      fontWeight: "bold",
+                      marginTop: 4,
+                      color: board[sel.r][sel.c].mine
+                        ? "#f87171"
+                        : "#4ade80",
                     }}
                   >
-                    {sel.data.action.toUpperCase()}
-                  </span>
-                  <div style={{ marginTop: 4 }}>
-                    {sel.data.reasons.map((reason, i) => (
-                      <div key={i}>• {reason}</div>
-                    ))}
+                    Actual:{" "}
+                    {board[sel.r][sel.c].mine ? "💣 MINE" : "✅ Safe"}
                   </div>
-                </>
-              )}
-              {sel.type === "prob" && sel.data && (
-                <>
-                  {" → "}
-                  <span style={{ color: "#fbbf24" }}>
-                    {(sel.data.prob * 100).toFixed(1)}% mine chance
-                  </span>
-                  {" ("}
-                  {sel.data.isFrontier ? "frontier" : "interior"}
-                  {")"}
-                </>
-              )}
-              {showMines && (
-                <div
-                  style={{
-                    marginTop: 4,
-                    color: board[sel.r][sel.c].mine
-                      ? "#f87171"
-                      : "#4ade80",
-                  }}
-                >
-                  Actual:{" "}
-                  {board[sel.r][sel.c].mine ? "💣 MINE" : "✅ Safe"}
-                </div>
-              )}
+                )}
+              </div>
+              <button
+                onClick={() => setSel(null)}
+                style={{
+                  padding: "2px 10px",
+                  borderRadius: 4,
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 11,
+                  background: "#6b7280",
+                  color: "#e5e7eb",
+                  flexShrink: 0,
+                }}
+              >
+                Clear
+              </button>
             </div>
           )}
         </div>
