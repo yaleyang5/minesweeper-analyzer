@@ -433,7 +433,7 @@ export default function App() {
           }}
         >
           <h2 style={{ color: "#f87171", margin: "0 0 8px" }}>
-            🔍 Minesweeper Analysis
+            🔍 Minesweeper Position Analyzer
           </h2>
 
           {/* Stats bar */}
@@ -445,7 +445,6 @@ export default function App() {
               marginBottom: 6,
               display: "flex",
               gap: 16,
-              flexWrap: "wrap",
             }}
           >
             <span>
