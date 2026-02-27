@@ -375,6 +375,7 @@ export default function App() {
   const mineDeds = deductions.filter((d) => d.action === "mine");
   const best5 = allHidden.filter((h) => !dedMap[h.key]).slice(0, 8);
 
+  const [hover, setHover] = useState<{ r: number; c: number; x: number; y: number } | null>(null);
   const sz = 24;
 
   function cellBg(r: number, c: number) {
@@ -705,6 +706,9 @@ export default function App() {
                 return (
                   <div
                     key={c}
+                    onMouseEnter={(e) => setHover({ r, c, x: e.clientX, y: e.clientY })}
+                    onMouseMove={(e) => setHover({ r, c, x: e.clientX, y: e.clientY })}
+                    onMouseLeave={() => setHover(null)}
                     onClick={() => {
                       if (d) {
                         setSel({ r, c, type: "ded", data: d });
@@ -716,6 +720,7 @@ export default function App() {
                       }
                     }}
                     style={{
+                      position: "relative",
                       width: sz,
                       height: sz,
                       display: "flex",
@@ -1126,6 +1131,26 @@ export default function App() {
           </div>
         </div>
       </div>
+      {hover && (
+        <div
+          style={{
+            position: "fixed",
+            left: hover.x + 10,
+            top: hover.y - 28,
+            background: "#000",
+            color: "#fff",
+            fontSize: 11,
+            padding: "3px 8px",
+            borderRadius: 4,
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            zIndex: 99999,
+            opacity: 0.75,
+          }}
+        >
+          R{hover.r} C{hover.c}
+        </div>
+      )}
     </div>
   );
 }
