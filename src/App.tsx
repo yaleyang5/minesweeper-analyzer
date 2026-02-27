@@ -318,12 +318,13 @@ export default function App() {
   const [inputVal, setInputVal] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [isWide, setIsWide] = useState(
-    () => window.matchMedia("(min-width: 1250px)").matches,
+    () => window.matchMedia("(min-width: 1500px)").matches,
   );
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1250px)");
+    const mq = window.matchMedia("(min-width: 1500px)");
     const handler = (e: MediaQueryListEvent) => setIsWide(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
@@ -417,7 +418,7 @@ export default function App() {
           flexDirection: isWide ? "row" : "column",
           alignItems: isWide ? "flex-start" : "center",
           gap: 20,
-          maxWidth: isWide ? 1250 : 600,
+          maxWidth: isWide ? 1500 : 725,
           width: "100%",
         }}
       >
@@ -428,8 +429,7 @@ export default function App() {
             flexDirection: "column",
             alignItems: isWide ? "flex-start" : "center",
             flex: isWide ? "0 0 auto" : undefined,
-            maxWidth: 600,
-            width: "100%",
+            width: isWide ? "auto" : "100%",
           }}
         >
           <h2 style={{ color: "#f87171", margin: "0 0 8px" }}>
@@ -439,7 +439,7 @@ export default function App() {
           {/* Stats bar */}
           <div
             style={{
-              maxWidth: 600,
+              maxWidth: 725,
               width: "100%",
               fontSize: 13,
               marginBottom: 6,
@@ -477,13 +477,14 @@ export default function App() {
           {/* Controls */}
           <div
             style={{
-              maxWidth: 600,
+              maxWidth: 725,
               width: "100%",
               display: "flex",
               gap: 12,
               marginBottom: 10,
               fontSize: 13,
-              alignItems: "center",
+              alignItems: "flex-start",
+              justifyContent: "flex-start",
             }}
           >
             <label style={{ cursor: "pointer" }}>
@@ -517,9 +518,31 @@ export default function App() {
                 background: "#374151",
                 color: "#e5e7eb",
                 fontWeight: "bold",
+                textAlign: "left",
               }}
             >
               {showImport ? "Hide Import" : "📋 Import Game State"}
+            </button>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(customB64);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+              style={{
+                padding: "4px 12px",
+                borderRadius: 4,
+                border: "none",
+                cursor: "pointer",
+                fontSize: 12,
+                lineHeight: "20px",
+                background: copied ? "#22c55e" : "#374151",
+                color: copied ? "#000" : "#e5e7eb",
+                fontWeight: "bold",
+                textAlign: "left",
+              }}
+            >
+              {copied ? "Copied!" : "📤 Copy Game State"}
             </button>
           </div>
 
@@ -527,7 +550,7 @@ export default function App() {
           {showImport && (
             <div
               style={{
-                maxWidth: 600,
+                maxWidth: 725,
                 width: "100%",
                 background: "#1f2937",
                 padding: 12,
@@ -630,7 +653,6 @@ export default function App() {
           {/* Board grid */}
           <div
             style={{
-              maxWidth: 600,
               width: "100%",
               overflowX: "auto",
               marginBottom: 14,
@@ -730,7 +752,7 @@ export default function App() {
           {/* Legend */}
           <div
             style={{
-              maxWidth: 600,
+              maxWidth: 725,
               width: "100%",
               background: "#1f2937",
               padding: 10,
@@ -750,7 +772,7 @@ export default function App() {
           {sel && (
             <div
               style={{
-                maxWidth: 600,
+                maxWidth: 725,
                 width: "100%",
                 background: "#374151",
                 padding: 12,
@@ -818,7 +840,7 @@ export default function App() {
             display: "flex",
             flexDirection: "column",
             flex: isWide ? 1 : undefined,
-            maxWidth: 600,
+            maxWidth: 725,
             width: "100%",
           }}
         >
