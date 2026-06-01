@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+# Minesweeper Position Analyzer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Live at <https://minesweeper-analyzer.vercel.app/>**
 
-Currently, two official plugins are available:
+A browser-based tool that analyzes a Minesweeper board position and tells you
+the best move. Paste an exported game state and it computes logical deductions,
+per-cell mine probabilities, and walks you through how a pro would reason about
+where to click next.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **Logical deductions** — finds guaranteed-safe and guaranteed-mine cells using
+  basic count rules plus subset (1-2-1 style) reasoning, with the rule that
+  triggered each deduction.
+- **Probability heatmap** — estimates the mine probability of every hidden cell
+  and shades the board from green (safe) to red (dangerous), with the percentage
+  drawn on each cell.
+- **Best-guess highlighting** — marks the lowest-probability cells when no
+  certain move exists.
+- **"Pro's Move" walkthrough** — a step-by-step explanation that counts mines,
+  splits the board into frontier (cells touching numbers) vs. interior
+  (isolated) cells, compares their densities, and recommends where to click.
+- **Board statistics** — mines remaining, flag count, hidden-cell breakdown, and
+  global vs. interior mine density.
+- **Import / export** — paste a base64 game-state string to analyze any
+  position, or copy the current one to share.
+- **Show mines (cheat)** — reveal the actual mine layout to check the analysis.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## How it works
 
-## Expanding the ESLint configuration
+The board is encoded as a base64 JSON blob (`numRows`, `numCols`, `numMines`,
+and a `gridObj` grid). Each cell is decoded into revealed / hidden / flagged
+states, then `analyze()` runs:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. **Constraint building** — every revealed number becomes a constraint over its
+   hidden neighbors. Constraints that are already satisfied mark their neighbors
+   safe; constraints where every hidden neighbor must be a mine mark them as
+   mines.
+2. **Subset deductions** — when one constraint's cells are a subset of another's,
+   the difference can sometimes be resolved as all-safe or all-mine.
+3. **Probability estimation** — each frontier cell averages the mine pressure
+   from its constraints; interior cells split the remaining expected mines
+   evenly. Cells are then ranked from safest to most dangerous.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Getting started
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev      # start the dev server
+npm run build    # type-check and build for production
+npm run preview  # preview the production build
+npm run lint     # run ESLint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Then open the local URL printed by Vite. A sample expert board is loaded by
+default — use **Import Game State** to paste your own.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Tech stack
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+React 19 + TypeScript, built with Vite. The entire app lives in
+[src/App.tsx](src/App.tsx).
